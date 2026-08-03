@@ -1,0 +1,135 @@
+[
+  {
+    "category": "muscle_arms",
+    "name": "Руки — 1",
+    "description": "Силовое упражнение.",
+    "video_url": null,
+    "sort_order": 0
+  },
+  {
+    "category": "muscle_arms",
+    "name": "Руки — 2",
+    "description": "Силовое упражнение.",
+    "video_url": null,
+    "sort_order": 1
+  },
+  {
+    "category": "muscle_core_back",
+    "name": "Кор / спина — 1",
+    "description": "Силовое упражнение.",
+    "video_url": null,
+    "sort_order": 0
+  },
+  {
+    "category": "muscle_core_back",
+    "name": "Кор / спина — 2",
+    "description": "Силовое упражнение.",
+    "video_url": null,
+    "sort_order": 1
+  },
+  {
+    "category": "muscle_glutes_legs",
+    "name": "Стульчик - 1 мин.",
+    "description": "Спиной к стене, ноги согнуты под углом 90 градусов - держим 30-60 сек.",
+    "video_url": "https://t.me/fitness_chiken/3",
+    "sort_order": 0
+  },
+  {
+    "category": "muscle_glutes_legs",
+    "name": "Ягодичный мостик - 1 мин.",
+    "description": "Лежа на спине, ноги согнуты, поднимаем попу вверх 3р по 20",
+    "video_url": "https://t.me/fitness_chiken/3",
+    "sort_order": 1
+  },
+  {
+    "category": "neck",
+    "name": "Повороты в стороны - 30 сек.",
+    "description": "В каждую сторону до упора по 8 раз, потом опускаем подбородок и держим 10 сек.",
+    "video_url": "https://t.me/fitness_chiken/1",
+    "sort_order": 0
+  },
+  {
+    "category": "neck",
+    "name": "Задняя поверхность - 1 мин.",
+    "description": "Растягиваем шею сзади",
+    "video_url": "https://t.me/fitness_chiken/3",
+    "sort_order": 0
+  },
+  {
+    "category": "neck",
+    "name": "Боковая поверхность - 1 мин.",
+    "description": "Растягиваем шею сбоку",
+    "video_url": "https://t.me/fitness_chiken/3",
+    "sort_order": 1
+  },
+  {
+    "category": "posture",
+    "name": "Провис в двери - 1 мин.",
+    "description": "Провисаем в проеме двери за счет прогиба в грудной клетке",
+    "video_url": "https://t.me/fitness_chiken/10",
+    "sort_order": 0
+  },
+  {
+    "category": "posture",
+    "name": "Руки у талии в стороны и назад - 30 сек.",
+    "description": "Локти у талии, разводим руки в стороны, руки сзади в замок, поднимаем вверх по 15 раз",
+    "video_url": "https://t.me/fitness_chiken/3",
+    "sort_order": 0
+  },
+  {
+    "category": "posture",
+    "name": "Круг с резинкой - 20 сек.",
+    "description": "Руки внизу спереди, держим резинку, делаем круг назад и обратно - 10 раз",
+    "video_url": "https://t.me/fitness_chiken/11",
+    "sort_order": 1
+  },
+  {
+    "category": "posture",
+    "name": "За спиной с резинкой - 30 сек.",
+    "description": "Руки вверху с резинкой, сгибаем в локтях и опускаем за спину.  Руки внизу за спиной, круги. По 8 раз",
+    "video_url": "https://t.me/fitness_chiken/3",
+    "sort_order": 2
+  },
+  {
+    "category": "posture",
+    "name": "Растягиваем подмышку - 1 мин.",
+    "description": "Боком у стены, рука сверху согнута в локте, растягиваем подмышку 30 сек",
+    "video_url": "https://t.me/fitness_chiken/3",
+    "sort_order": 3
+  },
+  {
+    "category": "posture",
+    "name": "Прогиб у стены - 1 мин.",
+    "description": "Руки на стену, постепенно прогибаемся в грудной клетке и сползаем по стене вниз",
+    "video_url": "https://t.me/fitness_chiken/3",
+    "sort_order": 4
+  },
+  {
+    "category": "posture",
+    "name": "Растягиваем плечи - 1 мин.",
+    "description": "Рука на косяк, поворот головы и тела в другую сторону от руки - 30 сек",
+    "video_url": "https://t.me/fitness_chiken/3",
+    "sort_order": 5
+  },
+  {
+    "category": "slot1",
+    "name": "Носочки/рамка - 1 мин.",
+    "description": "Поднимаемся вверх на носочки + поднимаем руки, 15 раз",
+    "video_url": "https://t.me/c/4363320846/3",
+    "sort_order": 0
+  },
+  {
+    "category": "slot2",
+    "name": "Апоневроз - 1 мин.",
+    "description": "Захватываем большие пряди волос и тянем в разные стороны и вверх",
+    "video_url": "https://t.me/fitness_chiken/6",
+    "sort_order": 0
+  },
+  {
+    "category": "slot3",
+    "name": "Декольте - 1 мин.",
+    "description": "Варианты: защипы, прокатывать мячом, растирать кулаком от центра в стороны",
+    "video_url": "https://t.me/fitness_chiken/7",
+    "sort_order": 0
+  }
+]

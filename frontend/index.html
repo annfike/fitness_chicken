@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Fitness Chicken</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="/assets/app.css?v=8" />
+</head>
+<body>
+  <main class="app">
+    <header class="top">
+      <p class="brand">Fitness Chicken</p>
+      <h1 id="title">Загрузка…</h1>
+      <p id="meta" class="meta"></p>
+    </header>
+
+    <nav id="tabs" class="tabs" hidden>
+      <button type="button" class="tab active" data-view="workout">Тренировка</button>
+      <button type="button" class="tab" data-view="success">Мой успех</button>
+      <button type="button" class="tab admin-only" data-view="admin" hidden>Админка</button>
+    </nav>
+
+    <div id="view-workout">
+      <section id="progress-bar" class="progress" hidden>
+        <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+        <p id="progress-label" class="progress-label"></p>
+      </section>
+      <p id="congrats" class="congrats" hidden></p>
+      <div id="sections"></div>
+      <p id="empty" class="empty" hidden>Каталог ещё не заполнен.</p>
+    </div>
+
+    <div id="view-success" hidden>
+      <div id="success-month-wrap">
+        <div class="success-toolbar">
+          <button type="button" id="success-prev" class="btn ghost tiny">←</button>
+          <p id="success-label" class="success-month-label"></p>
+          <button type="button" id="success-next" class="btn ghost tiny">→</button>
+        </div>
+        <p id="success-summary" class="hint"></p>
+        <div class="cal-weekdays" aria-hidden="true">
+          <span>пн</span><span>вт</span><span>ср</span><span>чт</span><span>пт</span><span>сб</span><span>вс</span>
+        </div>
+        <div id="success-cal" class="cal-grid"></div>
+        <div class="log-kind-btns" id="log-kind-btns">
+          <button type="button" class="btn log-kind-btn" data-kind="strength" title="Силовая">
+            <span class="log-kind-emoji">💪</span><span class="log-kind-count" data-count-for="strength">0</span>
+          </button>
+          <button type="button" class="btn log-kind-btn" data-kind="face" title="Фейсфитнес">
+            <span class="log-kind-emoji">😊</span><span class="log-kind-count" data-count-for="face">0</span>
+          </button>
+          <button type="button" class="btn log-kind-btn" data-kind="note" title="Заметки">
+            <span class="log-kind-emoji">📝</span><span class="log-kind-count" data-count-for="note">0</span>
+          </button>
+        </div>
+        <div id="success-kind-list" class="kind-log-list" hidden></div>
+      </div>
+
+      <div id="success-day-wrap" hidden>
+        <button type="button" id="success-day-back" class="btn ghost tiny">← К календарю</button>
+        <h2 id="success-day-title" class="day-title"></h2>
+        <p id="success-day-status" class="hint"></p>
+        <div id="success-day-base" class="day-block"></div>
+        <div id="success-day-bonus" class="day-block"></div>
+        <div id="success-day-logs" class="day-block"></div>
+        <form id="success-log-form" class="log-form">
+          <p class="name block-title">Добавить запись</p>
+          <label>Тип
+            <select id="log-kind"></select>
+          </label>
+          <label>Комментарий
+            <textarea id="log-comment" rows="3" placeholder="Что сделала…"></textarea>
+          </label>
+          <button type="submit" class="btn">Сохранить</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="view-admin" hidden>
+      <div id="admin-list-wrap">
+        <div class="admin-toolbar">
+          <select id="admin-category"></select>
+          <button type="button" id="admin-new" class="btn">+ Добавить</button>
+        </div>
+        <p class="hint">Редактируй упражнения прямо здесь — они сразу в базе.</p>
+        <ul id="admin-list" class="admin-list"></ul>
+        <div class="admin-danger">
+          <button type="button" id="admin-reload-seed" class="btn danger">Загрузить из catalog_seed.json</button>
+          <p class="hint">Заменит весь каталог содержимым файла (планы дня сбросятся).</p>
+        </div>
+      </div>
+
+      <div id="admin-form" class="admin-form" hidden>
+        <h2 id="form-title">Упражнение</h2>
+        <label>Категория
+          <select id="f-category"></select>
+        </label>
+        <label>Название
+          <input id="f-name" type="text" placeholder="Кошка-собака" />
+        </label>
+        <label>Описание
+          <textarea id="f-desc" rows="3" placeholder="Как выполнять…"></textarea>
+        </label>
+        <label>Ссылка на видео
+          <input id="f-video" type="url" placeholder="https://t.me/…" />
+        </label>
+        <label>Порядок
+          <input id="f-order" type="number" value="0" />
+        </label>
+        <label class="check-row">
+          <input id="f-active" type="checkbox" checked /> Активно
+        </label>
+        <div class="form-actions">
+          <button type="button" id="f-save" class="btn">Сохранить</button>
+          <button type="button" id="f-cancel" class="btn ghost">Отмена</button>
+        </div>
+      </div>
+    </div>
+
+    <p id="error" class="error" hidden></p>
+  </main>
+  <script src="/assets/app.js?v=8"></script>
+</body>
+</html>
