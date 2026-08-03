@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+import json
 import logging
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from aiogram import Bot, Dispatcher
 from aiogram.filters import Command, CommandStart
 from aiogram.types import (
+    BufferedInputFile,
+    FSInputFile,
     InlineKeyboardButton,
     InlineKeyboardMarkup,
     MenuButtonWebApp,
@@ -25,6 +29,28 @@ logger = logging.getLogger(__name__)
 bot: Bot | None = None
 dp = Dispatcher()
 scheduler = AsyncIOScheduler()
+
+
+def _require_admin(message: Message) -> bool:
+    settings = get_settings()
+    if settings.admin_id_set and message.from_user.id not in settings.admin_id_set:
+        return False
+    return True
+
+
+def resolve_sqlite_path() -> Path | None:
+    url = get_settings().database_url.strip()
+    if "sqlite" not in url:
+        return None
+    # sqlite+aiosqlite:///./fitness.db  or  sqlite+aiosqlite:////abs/path.db
+    if ":///" in url:
+        raw = url.split(":///", 1)[1]
+    else:
+        return None
+    path = Path(raw)
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    return path.resolve()
 
 
 def webapp_keyboard() -> InlineKeyboardMarkup:
@@ -76,7 +102,9 @@ async def cmd_start(message: Message) -> None:
         "Три раза в день напомню, если база ещё не закрыта.\n\n"
         "Команды:\n"
         "/today — прогресс за сегодня\n"
-        "/start — перезапуск бота",
+        "/start — перезапуск бота\n"
+        "/backup — скачать файл БД (админ)\n"
+        "/export_catalog — каталог в JSON (админ)",
         reply_markup=webapp_keyboard(),
     )
 
@@ -129,8 +157,7 @@ async def cmd_add_ex(message: Message) -> None:
     """
     from app.models import CATEGORY_LABELS
 
-    settings = get_settings()
-    if settings.admin_id_set and message.from_user.id not in settings.admin_id_set:
+    if not _require_admin(message):
         await message.answer("Только для админов.")
         return
 
@@ -182,8 +209,7 @@ async def cmd_list_ex(message: Message) -> None:
     """/list_ex [category]"""
     from app.models import CATEGORY_LABELS
 
-    settings = get_settings()
-    if settings.admin_id_set and message.from_user.id not in settings.admin_id_set:
+    if not _require_admin(message):
         await message.answer("Только для админов.")
         return
 
@@ -202,6 +228,56 @@ async def cmd_list_ex(message: Message) -> None:
     lines = [f"#{r.id} [{r.category}] {r.name}" for r in rows[:40]]
     extra = f"\n… ещё {len(rows) - 40}" if len(rows) > 40 else ""
     await message.answer("Каталог:\n" + "\n".join(lines) + extra)
+
+
+@dp.message(Command("backup"))
+async def cmd_backup(message: Message) -> None:
+    """Send SQLite database file to admin via Telegram."""
+    if not _require_admin(message):
+        await message.answer("Только для админов.")
+        return
+
+    path = resolve_sqlite_path()
+    if path is None:
+        await message.answer("Бэкап поддерживается только для SQLite.")
+        return
+    if not path.exists():
+        await message.answer(f"Файл БД не найден: {path}")
+        return
+
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    await message.answer_document(
+        FSInputFile(path, filename=f"fitness_{stamp}.db"),
+        caption="Бэкап базы данных. Сохрани файл у себя.",
+    )
+
+
+@dp.message(Command("export_catalog"))
+async def cmd_export_catalog(message: Message) -> None:
+    """Send catalog as JSON (same shape as catalog_seed.json)."""
+    if not _require_admin(message):
+        await message.answer("Только для админов.")
+        return
+
+    async with SessionLocal() as session:
+        rows = await services.list_catalog(session, category=None, active_only=False)
+
+    data = [
+        {
+            "category": r.category,
+            "name": r.name or "",
+            "description": r.description,
+            "video_url": r.video_url,
+            "sort_order": int(r.sort_order or 0),
+        }
+        for r in rows
+    ]
+    payload = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
+    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    await message.answer_document(
+        BufferedInputFile(payload, filename=f"catalog_seed_{stamp}.json"),
+        caption=f"Каталог: {len(data)} упражнений",
+    )
 
 
 async def send_progress_reminders() -> None:
