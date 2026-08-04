@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import validate_init_data
+from app import bot as bot_module
+from app.channel import membership_payload
 from app.config import get_settings
 from app.db import get_session
 from app.models import CATEGORY_LABELS
@@ -72,6 +74,12 @@ async def me(user=Depends(current_user)):
         first_name=user.first_name,
         is_admin=services.is_admin_user(user),
     )
+
+
+@router.get("/channel/status")
+async def channel_status(user=Depends(current_user)):
+    """Whether the user can open private channel videos; invite link if not."""
+    return await membership_payload(bot_module.bot, user.telegram_id)
 
 
 @router.get("/meta/categories")

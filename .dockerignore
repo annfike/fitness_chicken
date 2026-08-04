@@ -1,0 +1,17 @@
+.venv/
+venv/
+.git/
+.gitignore
+.env
+*.db
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.idea/
+.vscode/
+logs/
+info.txt
+localstart.ps1
+localstart.sh
+README.md

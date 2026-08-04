@@ -1,9 +1,13 @@
 from collections.abc import AsyncGenerator
+from pathlib import Path
+import logging
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class Base(DeclarativeBase):
@@ -13,6 +17,18 @@ class Base(DeclarativeBase):
 settings = get_settings()
 engine = create_async_engine(settings.database_url, echo=False)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)
+
+
+def resolve_sqlite_file(database_url: str | None = None) -> Path | None:
+    """Return filesystem path for sqlite URL, if applicable."""
+    url = (database_url or get_settings().database_url).strip()
+    if "sqlite" not in url or ":///" not in url:
+        return None
+    raw = url.split(":///", 1)[1]
+    path = Path(raw)
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    return path.resolve()
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
@@ -42,13 +58,30 @@ async def init_db() -> None:
     from app import models  # noqa: F401
     from app import services
 
+    db_path = resolve_sqlite_file()
+    if db_path is not None:
+        logger.info(
+            "SQLite file: %s (exists=%s, size=%s, cwd=%s)",
+            db_path,
+            db_path.exists(),
+            db_path.stat().st_size if db_path.exists() else 0,
+            Path.cwd(),
+        )
+    else:
+        logger.info("DATABASE_URL=%s", get_settings().database_url)
+
     async with engine.begin() as conn:
+        # create_all only adds missing tables — it does NOT drop or wipe data
         await conn.run_sync(Base.metadata.create_all)
         await conn.run_sync(_sqlite_add_missing_columns)
 
     async with SessionLocal() as session:
         n = await services.seed_catalog_if_empty(session)
         if n:
-            import logging
-
-            logging.getLogger(__name__).info("Seeded %s catalog exercises", n)
+            logger.warning(
+                "Catalog was empty — seeded %s exercises from catalog_seed.json "
+                "(this usually means a NEW empty database file after deploy)",
+                n,
+            )
+        else:
+            logger.info("Catalog already has data — seed skipped")

@@ -12,6 +12,7 @@
   const els = {
     title: document.getElementById("title"),
     meta: document.getElementById("meta"),
+    pageHeader: document.getElementById("page-header"),
     sections: document.getElementById("sections"),
     error: document.getElementById("error"),
     empty: document.getElementById("empty"),
@@ -159,13 +160,53 @@
   }
 
   function openVideo(url) {
-    if (tg?.openTelegramLink && /^(https?:\/\/)?(t\.me|telegram\.me)\//i.test(url)) {
-      tg.openTelegramLink(url.startsWith("http") ? url : `https://${url}`);
-    } else if (tg?.openLink) {
-      tg.openLink(url);
-    } else {
-      window.open(url, "_blank");
-    }
+    const go = () => {
+      if (tg?.openTelegramLink && /^(https?:\/\/)?(t\.me|telegram\.me)\//i.test(url)) {
+        tg.openTelegramLink(url.startsWith("http") ? url : `https://${url}`);
+      } else if (tg?.openLink) {
+        tg.openLink(url);
+      } else {
+        window.open(url, "_blank");
+      }
+    };
+
+    api("/api/channel/status")
+      .then((st) => {
+        if (st.required && !st.subscribed) {
+          const invite = st.invite_link;
+          const msg = invite
+            ? "Сначала вступи в канал с видео — без подписки ролики не откроются."
+            : "Нужна подписка на канал с видео. Напиши боту /start.";
+          if (typeof tg?.showPopup === "function" && invite) {
+            tg.showPopup({
+              title: "Нужна подписка",
+              message: msg,
+              buttons: [
+                { id: "join", type: "default", text: "Вступить" },
+                { type: "cancel" },
+              ],
+            }, (btnId) => {
+              if (btnId === "join") {
+                if (tg.openTelegramLink) tg.openTelegramLink(invite);
+                else if (tg.openLink) tg.openLink(invite);
+              }
+            });
+          } else if (typeof tg?.showAlert === "function") {
+            tg.showAlert(msg, () => {
+              if (invite) {
+                if (tg.openTelegramLink) tg.openTelegramLink(invite);
+                else if (tg.openLink) tg.openLink(invite);
+              }
+            });
+          } else {
+            alert(msg);
+            if (invite) window.open(invite, "_blank");
+          }
+          return;
+        }
+        go();
+      })
+      .catch(() => go());
   }
 
   function setView(name) {
@@ -178,18 +219,23 @@
       btn.classList.toggle("active", btn.dataset.view === name);
     });
     if (name === "admin") {
+      if (els.pageHeader) els.pageHeader.classList.remove("is-hidden");
+      els.title.classList.remove("date-heading");
       els.title.textContent = "Админка";
+      els.meta.hidden = false;
       els.meta.textContent = "Каталог упражнений в базе";
       els.bar.hidden = true;
       if (els.congrats) els.congrats.hidden = true;
       loadAdminList();
     } else if (name === "success") {
-      els.title.textContent = "Мой успех";
-      els.meta.textContent = "Календарь закрытия базы";
+      if (els.pageHeader) els.pageHeader.classList.add("is-hidden");
       els.bar.hidden = true;
       if (els.congrats) els.congrats.hidden = true;
       showSuccessMonth();
       loadSuccessMonth().catch((err) => showError(err.message));
+    } else if (name === "workout") {
+      if (els.pageHeader) els.pageHeader.classList.remove("is-hidden");
+      if (currentPlan) renderWorkout(currentPlan);
     }
   }
 
@@ -880,10 +926,13 @@
   function renderWorkout(plan) {
     clearError();
     els.empty.hidden = true;
-    els.title.textContent = plan.title;
-    els.meta.textContent = new Date(plan.plan_date + "T00:00:00").toLocaleDateString("ru-RU", {
+    if (els.pageHeader) els.pageHeader.classList.remove("is-hidden");
+    els.title.classList.add("date-heading");
+    els.title.textContent = new Date(plan.plan_date + "T00:00:00").toLocaleDateString("ru-RU", {
       weekday: "long", day: "numeric", month: "long",
     });
+    els.meta.hidden = true;
+    els.meta.textContent = "";
     const pct = plan.base_total ? Math.round((plan.base_completed / plan.base_total) * 100) : 0;
     els.bar.hidden = false;
     els.fill.style.width = pct + "%";

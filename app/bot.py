@@ -20,8 +20,9 @@ from aiogram.types import (
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 
+from app.channel import channel_configured, membership_payload
 from app.config import get_settings, webapp_public_url
-from app.db import SessionLocal
+from app.db import SessionLocal, resolve_sqlite_file
 from app import services
 
 logger = logging.getLogger(__name__)
@@ -39,18 +40,7 @@ def _require_admin(message: Message) -> bool:
 
 
 def resolve_sqlite_path() -> Path | None:
-    url = get_settings().database_url.strip()
-    if "sqlite" not in url:
-        return None
-    # sqlite+aiosqlite:///./fitness.db  or  sqlite+aiosqlite:////abs/path.db
-    if ":///" in url:
-        raw = url.split(":///", 1)[1]
-    else:
-        return None
-    path = Path(raw)
-    if not path.is_absolute():
-        path = Path.cwd() / path
-    return path.resolve()
+    return resolve_sqlite_file()
 
 
 def webapp_keyboard() -> InlineKeyboardMarkup:
@@ -107,6 +97,25 @@ async def cmd_start(message: Message) -> None:
         "/export_catalog — каталог в JSON (админ)",
         reply_markup=webapp_keyboard(),
     )
+
+    if bot is not None and channel_configured():
+        try:
+            status = await membership_payload(bot, message.from_user.id)
+            if status.get("required") and not status.get("subscribed"):
+                invite = status.get("invite_link")
+                if invite:
+                    kb = InlineKeyboardMarkup(
+                        inline_keyboard=[
+                            [InlineKeyboardButton(text="Вступить в канал с видео", url=invite)]
+                        ]
+                    )
+                    await message.answer(
+                        "Видео к упражнениям лежат в закрытом канале.\n"
+                        "Нажми кнопку ниже, вступи — и ролики откроются из миниаппа.",
+                        reply_markup=kb,
+                    )
+        except Exception:
+            logger.exception("Failed to send channel invite on /start")
 
 
 @dp.message(Command("today"))

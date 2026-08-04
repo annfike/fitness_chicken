@@ -12,6 +12,11 @@ class Settings(BaseSettings):
     timezone: str = "Europe/Moscow"
     database_url: str = "sqlite+aiosqlite:///./fitness.db"
     admin_ids: str = ""
+    # Private channel with exercise videos (bot must be admin)
+    # CHANNEL_ID: @public_username or -100xxxxxxxxxx
+    channel_id: str = ""
+    # Permanent invite link from channel settings (or created by bot)
+    channel_invite_link: str = ""
 
     @property
     def reminder_time_list(self) -> list[str]:

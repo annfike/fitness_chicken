@@ -38,7 +38,15 @@ from app.schemas import (
     SuccessDayOut,
 )
 
-SEED_PATH = Path(__file__).resolve().parent.parent / "data" / "catalog_seed.json"
+def _resolve_seed_path() -> Path:
+    root = Path(__file__).resolve().parent.parent
+    for candidate in (root / "seed" / "catalog_seed.json", root / "data" / "catalog_seed.json"):
+        if candidate.exists():
+            return candidate
+    return root / "data" / "catalog_seed.json"
+
+
+SEED_PATH = _resolve_seed_path()
 
 
 def _parse_ids(raw: str | None) -> list[int]:
