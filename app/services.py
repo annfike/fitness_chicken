@@ -674,6 +674,56 @@ async def _set_exercise_completion(
         row.completed_at = now if completed else None
 
 
+async def _base_exercise_ids(session: AsyncSession, day: UserDayPlan) -> list[int]:
+    """Catalog ids that make up the day's base circle."""
+    ids: list[int] = []
+    seen: set[int] = set()
+    for cat in (CAT_SLOT1, CAT_SLOT2, CAT_SLOT3):
+        slot = await _fixed_slot(session, cat)
+        if slot and slot.id not in seen:
+            seen.add(slot.id)
+            ids.append(slot.id)
+    for eid in (
+        _parse_ids(day.posture_base_ids)
+        + _parse_ids(day.neck_exercise_ids)
+        + _parse_ids(day.muscle_exercise_ids)
+    ):
+        if eid not in seen:
+            seen.add(eid)
+            ids.append(eid)
+    return ids
+
+
+async def complete_base_circle(
+    session: AsyncSession,
+    user: User,
+    *,
+    plan_date: date | None = None,
+) -> DayPlanOut:
+    """Mark every base-circle exercise done for the date (creates day plan if needed)."""
+    plan_date = plan_date or today_in_tz()
+    today = today_in_tz()
+    if plan_date > today:
+        raise ValueError("Нельзя закрыть будущий день")
+
+    day = await get_or_create_day_plan(session, user, plan_date)
+    base_ids = await _base_exercise_ids(session, day)
+    if not base_ids:
+        raise ValueError("В каталоге нет упражнений базы")
+
+    for eid in base_ids:
+        await _set_exercise_completion(
+            session,
+            user_id=user.id,
+            catalog_exercise_id=eid,
+            plan_date=plan_date,
+            block="base",
+            completed=True,
+        )
+    await session.commit()
+    return await build_day_plan(session, user, plan_date)
+
+
 async def toggle_completion(
     session: AsyncSession,
     user: User,
@@ -833,11 +883,13 @@ async def month_success(
         if base_done:
             base_closed += 1
             bonus_total += bonus_count
+        exercise_count = len(base_done_map.get(d, set())) + bonus_count
         days_out.append(
             SuccessDayOut(
                 date=d,
                 base_done=base_done,
                 bonus_count=bonus_count,
+                exercise_count=exercise_count,
                 log_kinds=log_kinds_map.get(d, []),
             )
         )

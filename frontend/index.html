@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Fitness Chicken</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="/assets/app.css?v=8" />
+  <link rel="stylesheet" href="/assets/app.css?v=9" />
 </head>
 <body>
   <main class="app">
@@ -22,6 +22,12 @@
     </nav>
 
     <div id="view-workout">
+      <div class="workout-actions" id="workout-actions">
+        <button type="button" class="btn workout-action" id="btn-complete-base">База сделана</button>
+        <button type="button" class="btn ghost workout-action" data-quick-log="strength">💪 Силовая</button>
+        <button type="button" class="btn ghost workout-action" data-quick-log="face">😊 Лицо</button>
+        <button type="button" class="btn ghost workout-action" data-quick-log="note">📝 Заметка</button>
+      </div>
       <section id="progress-bar" class="progress" hidden>
         <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
         <p id="progress-label" class="progress-label"></p>
@@ -59,8 +65,13 @@
 
       <div id="success-day-wrap" hidden>
         <button type="button" id="success-day-back" class="btn ghost tiny">← К календарю</button>
-        <h2 id="success-day-title" class="day-title"></h2>
+        <div class="success-day-nav">
+          <button type="button" id="success-day-prev" class="btn ghost tiny">←</button>
+          <h2 id="success-day-title" class="day-title"></h2>
+          <button type="button" id="success-day-next" class="btn ghost tiny">→</button>
+        </div>
         <p id="success-day-status" class="hint"></p>
+        <button type="button" id="success-day-complete" class="btn">Закрыть базу за этот день</button>
         <div id="success-day-base" class="day-block"></div>
         <div id="success-day-bonus" class="day-block"></div>
         <div id="success-day-logs" class="day-block"></div>
@@ -120,6 +131,6 @@
 
     <p id="error" class="error" hidden></p>
   </main>
-  <script src="/assets/app.js?v=8"></script>
+  <script src="/assets/app.js?v=9"></script>
 </body>
 </html>

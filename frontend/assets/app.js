@@ -37,6 +37,10 @@
     successDayBase: document.getElementById("success-day-base"),
     successDayBonus: document.getElementById("success-day-bonus"),
     successDayLogs: document.getElementById("success-day-logs"),
+    successDayPrev: document.getElementById("success-day-prev"),
+    successDayNext: document.getElementById("success-day-next"),
+    successDayComplete: document.getElementById("success-day-complete"),
+    btnCompleteBase: document.getElementById("btn-complete-base"),
     logForm: document.getElementById("success-log-form"),
     logKind: document.getElementById("log-kind"),
     logComment: document.getElementById("log-comment"),
@@ -313,11 +317,11 @@
       dayEl.textContent = String(d.getDate());
       cell.appendChild(dayEl);
 
-      if (day.base_done) {
-        const bonusEl = document.createElement("span");
-        bonusEl.className = "cal-bonus";
-        bonusEl.textContent = `+${day.bonus_count}`;
-        cell.appendChild(bonusEl);
+      if (day.exercise_count > 0) {
+        const countEl = document.createElement("span");
+        countEl.className = "cal-bonus";
+        countEl.textContent = String(day.exercise_count);
+        cell.appendChild(countEl);
       }
 
       if ((day.log_kinds || []).length) {
@@ -354,7 +358,24 @@
     loadSuccessMonth().catch((err) => showError(err.message));
   }
 
-  function renderDayExerciseList(title, items, emptyText) {
+  function shiftDateStr(dateStr, deltaDays) {
+    const d = new Date(dateStr + "T12:00:00");
+    d.setDate(d.getDate() + deltaDays);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function todayStr() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function renderDayExerciseList(title, items, emptyText, { interactive = false, planDate = null } = {}) {
     const wrap = document.createElement("div");
     const h = document.createElement("h3");
     h.textContent = title;
@@ -371,8 +392,28 @@
     for (const ex of items) {
       const li = document.createElement("li");
       if (ex.completed) li.classList.add("done");
+      if (interactive && planDate) {
+        li.classList.add("day-ex-toggle");
+        li.addEventListener("click", async () => {
+          try {
+            await api("/api/progress", {
+              method: "POST",
+              body: JSON.stringify({
+                catalog_exercise_id: ex.id,
+                block: "base",
+                completed: !ex.completed,
+                plan_date: planDate,
+              }),
+            });
+            const next = await api(`/api/success/day/${planDate}`);
+            renderSuccessDay(next);
+          } catch (err) {
+            showError(err.message);
+          }
+        });
+      }
       const name = document.createElement("div");
-      name.textContent = (ex.completed ? "✓ " : "") + (ex.name || "Упражнение");
+      name.textContent = (ex.completed ? "✓ " : "○ ") + (ex.name || "Упражнение");
       li.appendChild(name);
       if (ex.description && ex.description !== ex.name) {
         const d = document.createElement("div");
@@ -438,15 +479,24 @@
     els.successDayTitle.textContent = new Date(day.date + "T00:00:00").toLocaleDateString("ru-RU", {
       weekday: "long", day: "numeric", month: "long",
     });
+    const totalDone = day.base_completed + (day.bonus_exercises?.length || 0);
     els.successDayStatus.textContent = day.base_done
-      ? `База закрыта · ${day.base_completed}/${day.base_total} · допов: +${day.bonus_exercises.length}`
+      ? `База закрыта · ${day.base_completed}/${day.base_total} · всего упражнений: ${totalDone}`
       : day.base_total
         ? `База: ${day.base_completed}/${day.base_total}`
-        : "В этот день плана ещё не было";
+        : "Плана ещё не было — можно закрыть базу или добавить запись";
+
+    if (els.successDayComplete) {
+      els.successDayComplete.hidden = !!day.base_done;
+      els.successDayComplete.disabled = day.date > todayStr();
+    }
 
     els.successDayBase.innerHTML = "";
     els.successDayBase.appendChild(
-      renderDayExerciseList("База", day.base_exercises, "Нет упражнений базы")
+      renderDayExerciseList("База", day.base_exercises, "Нет упражнений базы — нажми «Закрыть базу»", {
+        interactive: true,
+        planDate: day.date,
+      })
     );
     els.successDayBonus.innerHTML = "";
     els.successDayBonus.appendChild(
@@ -992,6 +1042,69 @@
     els.successDayBack?.addEventListener("click", () => {
       showSuccessMonth();
       loadSuccessMonth().catch((err) => showError(err.message));
+    });
+    els.successDayPrev?.addEventListener("click", () => {
+      if (!selectedSuccessDate) return;
+      openSuccessDay(shiftDateStr(selectedSuccessDate, -1)).catch((err) => showError(err.message));
+    });
+    els.successDayNext?.addEventListener("click", () => {
+      if (!selectedSuccessDate) return;
+      openSuccessDay(shiftDateStr(selectedSuccessDate, 1)).catch((err) => showError(err.message));
+    });
+    els.successDayComplete?.addEventListener("click", async () => {
+      if (!selectedSuccessDate) return;
+      if (!confirm("Отметить всю базу за этот день как сделанную?")) return;
+      try {
+        await api("/api/progress/complete-base", {
+          method: "POST",
+          body: JSON.stringify({ plan_date: selectedSuccessDate }),
+        });
+        await openSuccessDay(selectedSuccessDate);
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+      } catch (err) {
+        showError(err.message);
+      }
+    });
+    els.btnCompleteBase?.addEventListener("click", async () => {
+      if (!confirm("Отметить все упражнения базы как сделанные?")) return;
+      try {
+        const plan = await api("/api/progress/complete-base", {
+          method: "POST",
+          body: JSON.stringify({}),
+        });
+        applyPlan(plan);
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+      } catch (err) {
+        showError(err.message);
+      }
+    });
+    document.querySelectorAll("[data-quick-log]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const kind = btn.dataset.quickLog;
+        const labels = { strength: "силовой", face: "лице", note: "заметке" };
+        const comment = window.prompt(`Комментарий к ${labels[kind] || "записи"}:`);
+        if (comment == null) return;
+        const text = comment.trim();
+        if (!text) {
+          showError("Нужен комментарий");
+          return;
+        }
+        try {
+          await api("/api/success/logs", {
+            method: "POST",
+            body: JSON.stringify({
+              log_date: todayStr(),
+              kind,
+              comment: text,
+            }),
+          });
+          if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+          if (typeof tg?.showAlert === "function") tg.showAlert("Запись сохранена");
+          else alert("Запись сохранена");
+        } catch (err) {
+          showError(err.message);
+        }
+      });
     });
     els.logForm?.addEventListener("submit", async (ev) => {
       ev.preventDefault();

@@ -55,6 +55,46 @@ h1 {
   margin: 20px 0 8px;
 }
 
+.workout-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.workout-action {
+  font-size: 0.88rem;
+  padding: 10px 8px;
+  line-height: 1.2;
+}
+
+.success-day-nav {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 4px;
+}
+
+.success-day-nav .day-title {
+  margin: 0;
+  text-align: center;
+  font-size: 1.05rem;
+}
+
+#success-day-complete {
+  width: 100%;
+  margin: 10px 0 4px;
+}
+
+.day-ex-toggle {
+  cursor: pointer;
+}
+
+.day-ex-toggle:active {
+  opacity: 0.85;
+}
+
 .progress-track {
   height: 8px;
   border-radius: 999px;

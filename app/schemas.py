@@ -55,6 +55,11 @@ class ToggleProgressIn(BaseModel):
     block: str = "base"  # base | bonus | muscle
     catalog_exercise_id: int | None = None
     section: str | None = None  # slot1 | slot2 | slot3 | posture_base | neck
+    plan_date: date | None = None
+
+
+class CompleteBaseIn(BaseModel):
+    plan_date: date | None = None
 
 
 class ChooseIn(BaseModel):
@@ -111,6 +116,7 @@ class SuccessDayOut(BaseModel):
     date: date
     base_done: bool
     bonus_count: int
+    exercise_count: int = 0
     log_kinds: list[str] = Field(default_factory=list)
 
 

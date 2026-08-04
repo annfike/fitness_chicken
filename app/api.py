@@ -13,6 +13,7 @@ from app.schemas import (
     CatalogExerciseOut,
     CatalogUpdateIn,
     ChooseIn,
+    CompleteBaseIn,
     DayPlanOut,
     DaySuccessOut,
     DaySummary,
@@ -136,6 +137,23 @@ async def toggle_progress(
             section=payload.section,
             block=payload.block,
             completed=payload.completed,
+            plan_date=payload.plan_date,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.post("/progress/complete-base", response_model=DayPlanOut)
+async def complete_base(
+    payload: CompleteBaseIn = CompleteBaseIn(),
+    user=Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        return await services.complete_base_circle(
+            session,
+            user,
+            plan_date=payload.plan_date,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
