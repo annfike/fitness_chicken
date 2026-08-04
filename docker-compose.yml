@@ -1,15 +1,12 @@
+# Used by Netrun (persistent SQLite volume).
+# Local extras (ports, .env) are in docker-compose.override.yml — Compose merges them automatically on your PC.
 services:
   app:
     build: .
-    ports:
-      - "8080:8080"
     expose: ["8080"]
     volumes:
       - dbdata:/app/data
-    env_file:
-      - .env
     environment:
-      # Absolute path inside container (persistent volume)
       DATABASE_URL: sqlite+aiosqlite:////app/data/fitness.db
 
 volumes:

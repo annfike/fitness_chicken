@@ -134,8 +134,9 @@ DATABASE_URL=sqlite+aiosqlite:////app/data/fitness.db
 ### Что уже есть в репозитории
 
 - `Dockerfile` — приложение на порту **8080**
-- `docker-compose.yml` — том `dbdata` → `/app/data` (постоянное хранилище)
-- сид каталога кладётся в образ как `/app/seed/catalog_seed.json` (том не перекрывает сид)
+- `docker-compose.yml` — том `dbdata` → `/app/data` (как просил Netrun)
+- `docker-compose.override.yml` — **только для локалки**: проброс `8080` и чтение `.env` (на Netrun обычно не нужен)
+- сид каталога в образе: `/app/seed/catalog_seed.json` (том не перекрывает сид)
 
 ### Шаги
 

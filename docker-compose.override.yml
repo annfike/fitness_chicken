@@ -1,0 +1,8 @@
+# Local only — Docker Compose loads this automatically next to docker-compose.yml.
+# Netrun typically uses only docker-compose.yml and ignores this file (or you can delete it from the deploy).
+services:
+  app:
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
