@@ -111,7 +111,7 @@ async def cmd_start(message: Message) -> None:
                     )
                     await message.answer(
                         "Видео к упражнениям лежат в закрытом канале.\n"
-                        "Нажми кнопку ниже, вступи — и ролики откроются из миниаппа.",
+                        "Нажми кнопку ниже, вступи — и ролики откроются.",
                         reply_markup=kb,
                     )
         except Exception:
