@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import logging
+import random
 from datetime import datetime
+from functools import lru_cache
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -41,6 +43,33 @@ def _require_admin(message: Message) -> bool:
 
 def resolve_sqlite_path() -> Path | None:
     return resolve_sqlite_file()
+
+
+def _resolve_text_file(name: str) -> Path | None:
+    """Prefer /app/seed (Docker) then project data/ (local)."""
+    root = Path(__file__).resolve().parent.parent
+    for candidate in (root / "seed" / name, root / "data" / name):
+        if candidate.exists():
+            return candidate
+    return None
+
+
+@lru_cache
+def _load_lines(name: str) -> tuple[str, ...]:
+    path = _resolve_text_file(name)
+    if path is None:
+        return ()
+    lines = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if line and not line.startswith("#"):
+            lines.append(line)
+    return tuple(lines)
+
+
+def _random_line(filename: str, fallback: str) -> str:
+    lines = _load_lines(filename)
+    return random.choice(lines) if lines else fallback
 
 
 def webapp_keyboard() -> InlineKeyboardMarkup:
@@ -86,15 +115,14 @@ async def cmd_start(message: Message) -> None:
 
     await message.answer(
         "Привет, спортивная курочка!\n\n"
-        "Потрать всего 10 минут для своей красоты.\n"
+        "Этот бот поможет тебе быть вечно молодой,\n"
+        "потратив всего 10 минут в день.\n"
         "Базовый круг - 10 упражнений по 1 (одной!) минуте.\n"
         "Для отличниц - доп. упражнения.\n"
         "Три раза в день напомню, если база ещё не закрыта.\n\n"
         "Команды:\n"
         "/today — прогресс за сегодня\n"
-        "/start — перезапуск бота\n"
-        "/backup — скачать файл БД (админ)\n"
-        "/export_catalog — каталог в JSON (админ)",
+        "/start — перезапуск бота\n",
         reply_markup=webapp_keyboard(),
     )
 
@@ -323,11 +351,15 @@ async def send_progress_reminders() -> None:
         if len(pending_bits) > 5:
             pending_preview += "…"
 
+        pet = _random_line("pet_names.txt", "красотка")
+        phrase = _random_line("reminder_phrases.txt", "Пора закрыть базовый круг!")
+        name = (user.first_name or "").strip() or "ты"
         text = (
-            f"⏰ Напоминание: базовый круг\n\n"
+            f"Привет, моя {pet} {name}!\n\n"
+            f"{phrase}\n\n"
+            f"⏰ Напоминание: базовый круг\n"
             f"Сделано: {plan_out.base_completed}/{plan_out.base_total}\n"
-            f"Осталось: {pending_preview or 'открыть приложение'}\n\n"
-            f"После базы можно ещё осанку или попу."
+            f"/today — прогресс за сегодня"
         )
         try:
             await bot.send_message(user.telegram_id, text, reply_markup=webapp_keyboard())
