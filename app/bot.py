@@ -46,9 +46,9 @@ def resolve_sqlite_path() -> Path | None:
 
 
 def _resolve_text_file(name: str) -> Path | None:
-    """Prefer /app/seed (Docker) then project data/ (local)."""
+    """Prefer /app/texts (Docker) then project data/ (local)."""
     root = Path(__file__).resolve().parent.parent
-    for candidate in (root / "seed" / name, root / "data" / name):
+    for candidate in (root / "texts" / name, root / "data" / name):
         if candidate.exists():
             return candidate
     return None
@@ -291,7 +291,7 @@ async def cmd_backup(message: Message) -> None:
 
 @dp.message(Command("export_catalog"))
 async def cmd_export_catalog(message: Message) -> None:
-    """Send catalog as JSON (same shape as catalog_seed.json)."""
+    """Send catalog as JSON export."""
     if not _require_admin(message):
         await message.answer("Только для админов.")
         return
@@ -312,7 +312,7 @@ async def cmd_export_catalog(message: Message) -> None:
     payload = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     await message.answer_document(
-        BufferedInputFile(payload, filename=f"catalog_seed_{stamp}.json"),
+        BufferedInputFile(payload, filename=f"catalog_export_{stamp}.json"),
         caption=f"Каталог: {len(data)} упражнений",
     )
 

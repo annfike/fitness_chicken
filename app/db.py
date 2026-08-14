@@ -56,7 +56,6 @@ def _sqlite_add_missing_columns(sync_conn) -> None:
 
 async def init_db() -> None:
     from app import models  # noqa: F401
-    from app import services
 
     db_path = resolve_sqlite_file()
     if db_path is not None:
@@ -74,14 +73,3 @@ async def init_db() -> None:
         # create_all only adds missing tables — it does NOT drop or wipe data
         await conn.run_sync(Base.metadata.create_all)
         await conn.run_sync(_sqlite_add_missing_columns)
-
-    async with SessionLocal() as session:
-        n = await services.seed_catalog_if_empty(session)
-        if n:
-            logger.warning(
-                "Catalog was empty — seeded %s exercises from catalog_seed.json "
-                "(this usually means a NEW empty database file after deploy)",
-                n,
-            )
-        else:
-            logger.info("Catalog already has data — seed skipped")

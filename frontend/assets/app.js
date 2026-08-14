@@ -1181,16 +1181,6 @@
     document.getElementById("admin-new").addEventListener("click", () => openForm(null));
     document.getElementById("f-save").addEventListener("click", saveForm);
     document.getElementById("f-cancel").addEventListener("click", closeForm);
-    document.getElementById("admin-reload-seed").addEventListener("click", async () => {
-      if (!confirm("Заменить весь каталог из catalog_seed.json? Планы дня сбросятся.")) return;
-      try {
-        const res = await api("/api/catalog/reload-seed", { method: "POST" });
-        alert(`Загружено упражнений: ${res.loaded}`);
-        await loadAdminList();
-      } catch (err) {
-        showError(err.message);
-      }
-    });
   }
 
   async function boot() {

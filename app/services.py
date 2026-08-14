@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import json
 import random
 from datetime import date, datetime, timedelta, timezone
-from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
@@ -37,16 +35,6 @@ from app.schemas import (
     MonthSuccessOut,
     SuccessDayOut,
 )
-
-def _resolve_seed_path() -> Path:
-    root = Path(__file__).resolve().parent.parent
-    for candidate in (root / "seed" / "catalog_seed.json", root / "data" / "catalog_seed.json"):
-        if candidate.exists():
-            return candidate
-    return root / "data" / "catalog_seed.json"
-
-
-SEED_PATH = _resolve_seed_path()
 
 
 def _parse_ids(raw: str | None) -> list[int]:
@@ -167,47 +155,6 @@ async def delete_catalog_exercise(session: AsyncSession, exercise_id: int) -> No
         raise ValueError("Exercise not found")
     await session.delete(row)
     await session.commit()
-
-
-async def seed_catalog_if_empty(session: AsyncSession) -> int:
-    result = await session.execute(select(CatalogExercise.id).limit(1))
-    if result.scalar_one_or_none() is not None:
-        return 0
-    return await _load_seed(session)
-
-
-async def reload_catalog_from_seed(session: AsyncSession) -> int:
-    """Wipe catalog and reload from catalog_seed.json (admin)."""
-    rows = await list_catalog(session, active_only=False)
-    for row in rows:
-        await session.delete(row)
-    await session.flush()
-    # also clear day plans so stale ids don't confuse
-    result = await session.execute(select(UserDayPlan))
-    for plan in result.scalars().all():
-        await session.delete(plan)
-    await session.flush()
-    return await _load_seed(session)
-
-
-async def _load_seed(session: AsyncSession) -> int:
-    if not SEED_PATH.exists():
-        return 0
-    data = json.loads(SEED_PATH.read_text(encoding="utf-8"))
-    count = 0
-    for i, item in enumerate(data):
-        session.add(
-            CatalogExercise(
-                category=item["category"],
-                name=item.get("name") or (item.get("description") or "Без названия")[:80],
-                description=item.get("description"),
-                video_url=item.get("video_url"),
-                sort_order=item.get("sort_order", i),
-            )
-        )
-        count += 1
-    await session.commit()
-    return count
 
 
 def is_admin_user(user: User) -> bool:

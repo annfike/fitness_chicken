@@ -11,10 +11,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
 COPY frontend ./frontend
-# Texts/seed stay in the image (not under /data)
-COPY data/catalog_seed.json ./seed/catalog_seed.json
-COPY data/pet_names.txt ./seed/pet_names.txt
-COPY data/reminder_phrases.txt ./seed/reminder_phrases.txt
+COPY data/pet_names.txt ./texts/pet_names.txt
+COPY data/reminder_phrases.txt ./texts/reminder_phrases.txt
 
 EXPOSE 8080
 

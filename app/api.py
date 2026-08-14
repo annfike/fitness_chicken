@@ -296,13 +296,3 @@ async def catalog_delete(
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {"ok": True}
-
-
-@router.post("/catalog/reload-seed")
-async def catalog_reload_seed(
-    user=Depends(current_user),
-    session: AsyncSession = Depends(get_session),
-):
-    require_admin(user)
-    n = await services.reload_catalog_from_seed(session)
-    return {"ok": True, "loaded": n}
