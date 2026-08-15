@@ -42,6 +42,9 @@
     successDayNext: document.getElementById("success-day-next"),
     successDayComplete: document.getElementById("success-day-complete"),
     btnCompleteBase: document.getElementById("btn-complete-base"),
+    workoutDayNav: document.getElementById("workout-day-nav"),
+    workoutDayPrev: document.getElementById("workout-day-prev"),
+    workoutDayNext: document.getElementById("workout-day-next"),
     logForm: document.getElementById("success-log-form"),
     logKind: document.getElementById("log-kind"),
     logComment: document.getElementById("log-comment"),
@@ -77,6 +80,29 @@
   let editingId = null;
   let isAdmin = false;
   let currentPlan = null;
+
+  function currentPlanDate() {
+    if (currentPlan?.plan_date) return currentPlan.plan_date;
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+
+  function withPlanDate(body) {
+    return { ...body, plan_date: currentPlanDate() };
+  }
+
+  function setWorkoutDayNav(showArrows) {
+    els.workoutDayNav?.classList.toggle("is-plain", !showArrows);
+  }
+
+  async function loadWorkoutDay(dateStr) {
+    const plan = await api(`/api/plan/${dateStr}`);
+    applyPlan(plan);
+  }
+
   let successCursor = null; // { year, month }
   let selectedSuccessDate = null;
   let monthLogsCache = [];
@@ -220,6 +246,7 @@
     });
     if (name === "admin") {
       if (els.pageHeader) els.pageHeader.classList.remove("is-hidden");
+      setWorkoutDayNav(false);
       els.title.classList.remove("date-heading");
       els.title.textContent = "Админка";
       els.meta.hidden = false;
@@ -235,6 +262,7 @@
       loadSuccessMonth().catch((err) => showError(err.message));
     } else if (name === "workout") {
       if (els.pageHeader) els.pageHeader.classList.remove("is-hidden");
+      setWorkoutDayNav(true);
       if (currentPlan) renderWorkout(currentPlan);
     }
   }
@@ -705,11 +733,11 @@
           try {
             rerender(await api("/api/progress", {
               method: "POST",
-              body: JSON.stringify({
+              body: JSON.stringify(withPlanDate({
                 catalog_exercise_id: opt.id,
                 block,
                 completed: !opt.completed,
-              }),
+              })),
             }));
             if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
           } catch (err) {
@@ -771,11 +799,11 @@
           onToggle: async (item) => {
             rerender(await api("/api/progress", {
               method: "POST",
-              body: JSON.stringify({
+              body: JSON.stringify(withPlanDate({
                 catalog_exercise_id: item.id,
                 block,
                 completed: !item.completed,
-              }),
+              })),
             }));
           },
         })
@@ -848,11 +876,11 @@
         try {
           rerender(await api("/api/progress", {
             method: "POST",
-            body: JSON.stringify({
+            body: JSON.stringify(withPlanDate({
               section: sec.key,
               block: "base",
               completed: !sec.section_completed,
-            }),
+            })),
           }));
           if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
         } catch (err) {
@@ -898,7 +926,7 @@
           expandedExtras[extra.key] = true;
           const next = await api("/api/extra", {
             method: "POST",
-            body: JSON.stringify({ kind: kindByKey[extra.key] }),
+            body: JSON.stringify(withPlanDate({ kind: kindByKey[extra.key] })),
           });
           rerender(next);
           if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
@@ -927,6 +955,7 @@
     clearError();
     els.empty.hidden = true;
     if (els.pageHeader) els.pageHeader.classList.remove("is-hidden");
+    setWorkoutDayNav(true);
     els.title.classList.add("date-heading");
     els.title.textContent = new Date(plan.plan_date + "T00:00:00").toLocaleDateString("ru-RU", {
       weekday: "long", day: "numeric", month: "long",
@@ -1071,8 +1100,8 @@
         try {
           if (view === "workout") {
             setView("workout");
-            const plan = await api("/api/plan/today");
-            applyPlan(plan);
+            const dateStr = currentPlan?.plan_date || todayStr();
+            await loadWorkoutDay(dateStr);
           } else if (view === "success") {
             setView("success");
           } else if (view === "admin") {
@@ -1085,6 +1114,12 @@
     });
     els.successPrev?.addEventListener("click", () => shiftSuccessMonth(-1));
     els.successNext?.addEventListener("click", () => shiftSuccessMonth(1));
+    els.workoutDayPrev?.addEventListener("click", () => {
+      loadWorkoutDay(shiftDateStr(currentPlanDate(), -1)).catch((err) => showError(err.message));
+    });
+    els.workoutDayNext?.addEventListener("click", () => {
+      loadWorkoutDay(shiftDateStr(currentPlanDate(), 1)).catch((err) => showError(err.message));
+    });
     document.querySelectorAll(".log-kind-btn").forEach((btn) => {
       btn.addEventListener("click", () => setActiveLogKind(btn.dataset.kind));
     });
@@ -1119,7 +1154,7 @@
       try {
         const plan = await api("/api/progress/complete-base", {
           method: "POST",
-          body: JSON.stringify({}),
+          body: JSON.stringify({ plan_date: currentPlanDate() }),
         });
         applyPlan(plan);
         if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
@@ -1142,7 +1177,7 @@
           await api("/api/success/logs", {
             method: "POST",
             body: JSON.stringify({
-              log_date: todayStr(),
+              log_date: currentPlanDate(),
               kind,
               comment: text,
             }),

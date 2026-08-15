@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Fitness Chicken</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <link rel="stylesheet" href="/assets/app.css?v=14" />
+  <link rel="stylesheet" href="/assets/app.css?v=16" />
 </head>
 <body>
   <main class="app">
@@ -16,7 +16,11 @@
     </nav>
 
     <header class="top" id="page-header">
-      <h1 id="title">Загрузка…</h1>
+      <div class="workout-day-nav" id="workout-day-nav">
+        <button type="button" id="workout-day-prev" class="btn ghost tiny">←</button>
+        <h1 id="title">Загрузка…</h1>
+        <button type="button" id="workout-day-next" class="btn ghost tiny">→</button>
+      </div>
       <p id="meta" class="meta" hidden></p>
     </header>
 
@@ -126,6 +130,6 @@
 
     <p id="error" class="error" hidden></p>
   </main>
-  <script src="/assets/app.js?v=15"></script>
+  <script src="/assets/app.js?v=16"></script>
 </body>
 </html>

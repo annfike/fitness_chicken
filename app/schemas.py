@@ -34,6 +34,7 @@ class DaySectionOut(BaseModel):
 
 class ExtraIn(BaseModel):
     kind: str  # posture | glutes
+    plan_date: date | None = None
 
 
 class DayPlanOut(BaseModel):
@@ -65,6 +66,7 @@ class CompleteBaseIn(BaseModel):
 class ChooseIn(BaseModel):
     slot: str  # slot3 | neck
     catalog_exercise_id: int
+    plan_date: date | None = None
 
 
 class CatalogAddIn(BaseModel):

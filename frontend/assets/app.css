@@ -49,12 +49,37 @@ h1 {
   line-height: 1.25;
 }
 
+.workout-day-nav {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.workout-day-nav h1 {
+  text-align: center;
+  margin: 0;
+}
+
 h1.date-heading {
   font-size: 1.45rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   text-transform: capitalize;
 }
+
+#workout-day-nav.is-plain {
+  display: block;
+}
+
+#workout-day-nav.is-plain .btn {
+  display: none;
+}
+
+#workout-day-nav.is-plain h1 {
+  text-align: left;
+}
+
 
 .meta {
   margin: 8px 0 0;

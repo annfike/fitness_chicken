@@ -109,7 +109,7 @@ async def add_extra(
     session: AsyncSession = Depends(get_session),
 ):
     try:
-        return await services.add_extra(session, user, kind=payload.kind)
+        return await services.add_extra(session, user, kind=payload.kind, plan_date=payload.plan_date)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -126,6 +126,7 @@ async def choose(
             user,
             slot=payload.slot,
             catalog_exercise_id=payload.catalog_exercise_id,
+            plan_date=payload.plan_date,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
