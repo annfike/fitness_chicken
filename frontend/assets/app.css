@@ -95,7 +95,14 @@ h1.date-heading {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin: 16px 0 12px;
+  margin: 4px 0 12px;
+}
+
+.section-label {
+  margin: 16px 0 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.85;
 }
 
 .workout-action {
@@ -106,6 +113,56 @@ h1.date-heading {
   padding: 7px 8px;
   line-height: 1.15;
   border-radius: 10px;
+}
+
+.strength-pick {
+  margin: 24px 0 8px;
+}
+
+.strength-pick > .btn {
+  width: 100%;
+}
+
+.strength-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.strength-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.strength-item .name {
+  margin: 0;
+  font-weight: 650;
+}
+
+.strength-item .meta-line {
+  margin: 0;
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+
+.strength-item .strength-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-mode-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .success-day-nav {

@@ -86,6 +86,35 @@ class CatalogUpdateIn(BaseModel):
     is_active: bool | None = None
 
 
+class StrengthWorkoutOut(BaseModel):
+    id: int
+    name: str
+    duration: str | None = None
+    url: str | None = None
+    trainer: str | None = None
+    sort_order: int = 0
+    is_active: bool = True
+
+    model_config = {"from_attributes": True}
+
+
+class StrengthWorkoutAddIn(BaseModel):
+    name: str
+    duration: str | None = None
+    url: str | None = None
+    trainer: str | None = None
+    sort_order: int = 0
+
+
+class StrengthWorkoutUpdateIn(BaseModel):
+    name: str | None = None
+    duration: str | None = None
+    url: str | None = None
+    trainer: str | None = None
+    sort_order: int | None = None
+    is_active: bool | None = None
+
+
 class UserOut(BaseModel):
     id: int
     telegram_id: int

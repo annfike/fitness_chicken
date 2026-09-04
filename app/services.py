@@ -21,6 +21,7 @@ from app.models import (
     MUSCLE_LABELS,
     ActivityLog,
     CatalogExercise,
+    StrengthWorkout,
     User,
     UserCompletion,
     UserDayPlan,
@@ -153,6 +154,79 @@ async def delete_catalog_exercise(session: AsyncSession, exercise_id: int) -> No
     row = result.scalar_one_or_none()
     if row is None:
         raise ValueError("Exercise not found")
+    await session.delete(row)
+    await session.commit()
+
+
+async def list_strength_workouts(
+    session: AsyncSession, *, active_only: bool = True
+) -> list[StrengthWorkout]:
+    q = select(StrengthWorkout).order_by(StrengthWorkout.sort_order, StrengthWorkout.id)
+    if active_only:
+        q = q.where(StrengthWorkout.is_active.is_(True))
+    result = await session.execute(q)
+    return list(result.scalars().all())
+
+
+async def add_strength_workout(
+    session: AsyncSession,
+    *,
+    name: str,
+    duration: str | None = None,
+    url: str | None = None,
+    trainer: str | None = None,
+    sort_order: int = 0,
+) -> StrengthWorkout:
+    row = StrengthWorkout(
+        name=name,
+        duration=duration,
+        url=url,
+        trainer=trainer,
+        sort_order=sort_order,
+    )
+    session.add(row)
+    await session.commit()
+    await session.refresh(row)
+    return row
+
+
+async def update_strength_workout(
+    session: AsyncSession,
+    workout_id: int,
+    *,
+    name: str | None = None,
+    duration: str | None = None,
+    url: str | None = None,
+    trainer: str | None = None,
+    sort_order: int | None = None,
+    is_active: bool | None = None,
+) -> StrengthWorkout:
+    result = await session.execute(select(StrengthWorkout).where(StrengthWorkout.id == workout_id))
+    row = result.scalar_one_or_none()
+    if row is None:
+        raise ValueError("Strength workout not found")
+    if name is not None:
+        row.name = name
+    if duration is not None:
+        row.duration = duration or None
+    if url is not None:
+        row.url = url or None
+    if trainer is not None:
+        row.trainer = trainer or None
+    if sort_order is not None:
+        row.sort_order = sort_order
+    if is_active is not None:
+        row.is_active = is_active
+    await session.commit()
+    await session.refresh(row)
+    return row
+
+
+async def delete_strength_workout(session: AsyncSession, workout_id: int) -> None:
+    result = await session.execute(select(StrengthWorkout).where(StrengthWorkout.id == workout_id))
+    row = result.scalar_one_or_none()
+    if row is None:
+        raise ValueError("Strength workout not found")
     await session.delete(row)
     await session.commit()
 

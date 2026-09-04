@@ -21,6 +21,9 @@ from app.schemas import (
     DaySummary,
     ExtraIn,
     MonthSuccessOut,
+    StrengthWorkoutAddIn,
+    StrengthWorkoutOut,
+    StrengthWorkoutUpdateIn,
     ToggleProgressIn,
     UserOut,
 )
@@ -294,6 +297,80 @@ async def catalog_delete(
     require_admin(user)
     try:
         await services.delete_catalog_exercise(session, exercise_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return {"ok": True}
+
+
+def strength_out(row) -> StrengthWorkoutOut:
+    return StrengthWorkoutOut.model_validate(row)
+
+
+@router.get("/strength-workouts", response_model=list[StrengthWorkoutOut])
+async def strength_list(
+    include_inactive: bool = False,
+    user=Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    if include_inactive:
+        require_admin(user)
+        rows = await services.list_strength_workouts(session, active_only=False)
+    else:
+        rows = await services.list_strength_workouts(session, active_only=True)
+    return [strength_out(r) for r in rows]
+
+
+@router.post("/strength-workouts", response_model=StrengthWorkoutOut)
+async def strength_add(
+    payload: StrengthWorkoutAddIn,
+    user=Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    require_admin(user)
+    row = await services.add_strength_workout(
+        session,
+        name=payload.name,
+        duration=payload.duration,
+        url=payload.url,
+        trainer=payload.trainer,
+        sort_order=payload.sort_order,
+    )
+    return strength_out(row)
+
+
+@router.patch("/strength-workouts/{workout_id}", response_model=StrengthWorkoutOut)
+async def strength_update(
+    workout_id: int,
+    payload: StrengthWorkoutUpdateIn,
+    user=Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    require_admin(user)
+    try:
+        row = await services.update_strength_workout(
+            session,
+            workout_id,
+            name=payload.name,
+            duration=payload.duration,
+            url=payload.url,
+            trainer=payload.trainer,
+            sort_order=payload.sort_order,
+            is_active=payload.is_active,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+    return strength_out(row)
+
+
+@router.delete("/strength-workouts/{workout_id}")
+async def strength_delete(
+    workout_id: int,
+    user=Depends(current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    require_admin(user)
+    try:
+        await services.delete_strength_workout(session, workout_id)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return {"ok": True}

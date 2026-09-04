@@ -42,6 +42,8 @@
     successDayNext: document.getElementById("success-day-next"),
     successDayComplete: document.getElementById("success-day-complete"),
     btnCompleteBase: document.getElementById("btn-complete-base"),
+    btnPickStrength: document.getElementById("btn-pick-strength"),
+    strengthList: document.getElementById("strength-list"),
     workoutDayNav: document.getElementById("workout-day-nav"),
     workoutDayPrev: document.getElementById("workout-day-prev"),
     workoutDayNext: document.getElementById("workout-day-next"),
@@ -51,11 +53,22 @@
     adminCategory: document.getElementById("admin-category"),
     adminList: document.getElementById("admin-list"),
     adminForm: document.getElementById("admin-form"),
+    adminHint: document.getElementById("admin-hint"),
+    adminExToolbar: document.getElementById("admin-ex-toolbar"),
+    adminStrengthToolbar: document.getElementById("admin-strength-toolbar"),
     formTitle: document.getElementById("form-title"),
     fCategory: document.getElementById("f-category"),
+    fCategoryWrap: document.getElementById("f-category-wrap"),
     fName: document.getElementById("f-name"),
     fDesc: document.getElementById("f-desc"),
+    fDescWrap: document.getElementById("f-desc-wrap"),
+    fDuration: document.getElementById("f-duration"),
+    fDurationWrap: document.getElementById("f-duration-wrap"),
+    fTrainer: document.getElementById("f-trainer"),
+    fTrainerWrap: document.getElementById("f-trainer-wrap"),
     fVideo: document.getElementById("f-video"),
+    fVideoWrap: document.getElementById("f-video-wrap"),
+    fVideoLabel: document.getElementById("f-video-label"),
     fOrder: document.getElementById("f-order"),
     fActive: document.getElementById("f-active"),
   };
@@ -78,6 +91,9 @@
 
   let categories = [];
   let editingId = null;
+  let adminMode = "exercises"; // exercises | strength
+  let strengthListOpen = false;
+  let strengthCache = null;
   let isAdmin = false;
   let currentPlan = null;
 
@@ -250,7 +266,9 @@
       els.title.classList.remove("date-heading");
       els.title.textContent = "Админка";
       els.meta.hidden = false;
-      els.meta.textContent = "Каталог упражнений в базе";
+      els.meta.textContent = adminMode === "strength"
+        ? "Силовые тренировки (отдельный список)"
+        : "Каталог упражнений в базе";
       els.bar.hidden = true;
       if (els.congrats) els.congrats.hidden = true;
       loadAdminList();
@@ -593,19 +611,34 @@
   function openForm(row) {
     clearError();
     editingId = row ? row.id : null;
-    els.formTitle.textContent = row ? `Редактировать #${row.id}` : "Новое упражнение";
-    if (categories.length && els.fCategory.options.length === 0) {
-      fillCategorySelects();
+    const isStrength = adminMode === "strength";
+    els.formTitle.textContent = row
+      ? `Редактировать #${row.id}`
+      : (isStrength ? "Новая силовая" : "Новое упражнение");
+
+    if (els.fCategoryWrap) els.fCategoryWrap.hidden = isStrength;
+    if (els.fDescWrap) els.fDescWrap.hidden = isStrength;
+    if (els.fDurationWrap) els.fDurationWrap.hidden = !isStrength;
+    if (els.fTrainerWrap) els.fTrainerWrap.hidden = !isStrength;
+    if (els.fVideoLabel) els.fVideoLabel.textContent = isStrength ? "Ссылка" : "Ссылка на видео";
+
+    if (!isStrength) {
+      if (categories.length && els.fCategory.options.length === 0) {
+        fillCategorySelects();
+      }
+      const cat = row ? row.category : (categories[0]?.id || "posture");
+      els.fCategory.value = cat;
+      els.fDesc.value = row?.description || "";
+      els.fVideo.value = row?.video_url || "";
+    } else {
+      els.fDuration.value = row?.duration || "";
+      els.fTrainer.value = row?.trainer || "";
+      els.fVideo.value = row?.url || "";
     }
-    const cat = row ? row.category : (categories[0]?.id || "posture");
-    els.fCategory.value = cat;
     els.fName.value = row?.name || "";
-    els.fDesc.value = row?.description || "";
-    els.fVideo.value = row?.video_url || "";
     els.fOrder.value = String(row?.sort_order ?? 0);
     els.fActive.checked = row ? row.is_active !== false : true;
 
-    // Show only the form (list is long — form was below the fold)
     document.getElementById("admin-list-wrap")?.classList.add("is-hidden");
     els.adminForm.hidden = false;
     els.viewAdmin.hidden = false;
@@ -988,12 +1021,94 @@
     els.fCategory.innerHTML = opts;
   }
 
+  function setAdminMode(mode) {
+    adminMode = mode;
+    document.querySelectorAll(".admin-mode").forEach((btn) => {
+      const active = btn.dataset.adminMode === mode;
+      btn.classList.toggle("active", active);
+      btn.classList.toggle("ghost", !active);
+    });
+    if (els.adminExToolbar) els.adminExToolbar.hidden = mode !== "exercises";
+    if (els.adminStrengthToolbar) els.adminStrengthToolbar.hidden = mode !== "strength";
+    if (els.adminHint) {
+      els.adminHint.textContent = mode === "strength"
+        ? "Список силовых для кнопки «Выбрать силовую» на странице Тренировка."
+        : "Редактируй упражнения прямо здесь — они сразу в базе.";
+    }
+    if (els.meta && !els.viewAdmin.hidden) {
+      els.meta.textContent = mode === "strength"
+        ? "Силовые тренировки (отдельный список)"
+        : "Каталог упражнений в базе";
+    }
+    closeForm();
+    loadAdminList().catch((err) => showError(err.message));
+  }
+
   async function loadAdminList() {
     clearError();
+    els.adminList.innerHTML = "";
+    if (adminMode === "strength") {
+      const rows = await api("/api/strength-workouts?include_inactive=true");
+      if (!rows.length) {
+        els.adminList.innerHTML = `<li class="hint">Пока нет силовых — нажми «+ Добавить силовую»</li>`;
+        return;
+      }
+      for (const row of rows) {
+        const li = document.createElement("li");
+        li.className = "admin-item" + (row.is_active ? "" : " inactive");
+        const bits = [row.duration, row.trainer].filter(Boolean).join(" · ");
+        li.innerHTML = `
+          <div class="admin-item-body">
+            <p class="name"></p>
+            <p class="desc"></p>
+          </div>
+          <div class="admin-item-actions">
+            <button type="button" class="btn tiny edit">Изменить</button>
+            <button type="button" class="btn tiny ghost toggle"></button>
+            <button type="button" class="btn tiny danger del">Удалить</button>
+          </div>
+        `;
+        li.querySelector(".name").textContent = `#${row.id} · ${row.name}`;
+        li.querySelector(".desc").textContent = bits || (row.url ? "есть ссылка" : "без деталей");
+        const toggleBtn = li.querySelector(".toggle");
+        toggleBtn.textContent = row.is_active ? "Выкл" : "Вкл";
+        li.querySelector(".edit").addEventListener("click", (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          openForm(row);
+        });
+        toggleBtn.addEventListener("click", async (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          try {
+            await api(`/api/strength-workouts/${row.id}`, {
+              method: "PATCH",
+              body: JSON.stringify({ is_active: !row.is_active }),
+            });
+            await loadAdminList();
+          } catch (err) {
+            showError(err.message);
+          }
+        });
+        li.querySelector(".del").addEventListener("click", async (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          if (!confirm(`Удалить «${row.name}»?`)) return;
+          try {
+            await api(`/api/strength-workouts/${row.id}`, { method: "DELETE" });
+            await loadAdminList();
+          } catch (err) {
+            showError(err.message);
+          }
+        });
+        els.adminList.appendChild(li);
+      }
+      return;
+    }
+
     const cat = els.adminCategory.value;
     const q = cat ? `?category=${encodeURIComponent(cat)}` : "";
     const rows = await api("/api/catalog" + q);
-    els.adminList.innerHTML = "";
     if (!rows.length) {
       els.adminList.innerHTML = `<li class="hint">Пусто в этой категории</li>`;
       return;
@@ -1055,6 +1170,48 @@
   }
 
   async function saveForm() {
+    if (adminMode === "strength") {
+      const payload = {
+        name: els.fName.value.trim(),
+        duration: els.fDuration.value.trim() || null,
+        url: els.fVideo.value.trim() || null,
+        trainer: els.fTrainer.value.trim() || null,
+        sort_order: Number(els.fOrder.value) || 0,
+        is_active: els.fActive.checked,
+      };
+      if (!payload.name) {
+        showError("Укажи название");
+        return;
+      }
+      try {
+        if (editingId) {
+          await api(`/api/strength-workouts/${editingId}`, {
+            method: "PATCH",
+            body: JSON.stringify(payload),
+          });
+        } else {
+          const { is_active, ...createPayload } = payload;
+          const created = await api("/api/strength-workouts", {
+            method: "POST",
+            body: JSON.stringify(createPayload),
+          });
+          if (!is_active) {
+            await api(`/api/strength-workouts/${created.id}`, {
+              method: "PATCH",
+              body: JSON.stringify({ is_active: false }),
+            });
+          }
+        }
+        strengthCache = null;
+        closeForm();
+        await loadAdminList();
+        if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+      } catch (err) {
+        showError(err.message);
+      }
+      return;
+    }
+
     const payload = {
       category: els.fCategory.value,
       name: els.fName.value.trim(),
@@ -1074,7 +1231,6 @@
         const { is_active, ...createPayload } = payload;
         await api("/api/catalog", { method: "POST", body: JSON.stringify(createPayload) });
         if (!is_active) {
-          // created active by default; deactivate if needed
           const list = await api(`/api/catalog?category=${encodeURIComponent(payload.category)}`);
           const created = list.filter((r) => r.name === payload.name).pop();
           if (created) {
@@ -1089,6 +1245,70 @@
       await loadAdminList();
       if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
     } catch (err) {
+      showError(err.message);
+    }
+  }
+
+  function renderStrengthList(rows) {
+    els.strengthList.innerHTML = "";
+    if (!rows.length) {
+      els.strengthList.innerHTML = `<li class="hint">Список силовых пока пуст</li>`;
+      return;
+    }
+    for (const row of rows) {
+      const li = document.createElement("li");
+      li.className = "strength-item";
+      const meta = [row.duration, row.trainer].filter(Boolean).join(" · ");
+      li.innerHTML = `
+        <p class="name"></p>
+        ${meta ? `<p class="meta-line"></p>` : ""}
+        <div class="strength-actions">
+          ${row.url ? `<button type="button" class="btn tiny open-link">Открыть</button>` : ""}
+          <button type="button" class="btn tiny ghost mark-done">Отметить</button>
+        </div>
+      `;
+      li.querySelector(".name").textContent = row.name;
+      const metaEl = li.querySelector(".meta-line");
+      if (metaEl) metaEl.textContent = meta;
+      li.querySelector(".open-link")?.addEventListener("click", () => openVideo(row.url));
+      li.querySelector(".mark-done")?.addEventListener("click", async () => {
+        const parts = [row.name];
+        if (row.duration) parts.push(row.duration);
+        if (row.trainer) parts.push(row.trainer);
+        try {
+          await api("/api/success/logs", {
+            method: "POST",
+            body: JSON.stringify({
+              log_date: currentPlanDate(),
+              kind: "strength",
+              comment: parts.join(" · "),
+            }),
+          });
+          if (row.url) openVideo(row.url);
+          if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
+          if (typeof tg?.showAlert === "function") tg.showAlert("Силовая отмечена");
+          else alert("Силовая отмечена");
+        } catch (err) {
+          showError(err.message);
+        }
+      });
+      els.strengthList.appendChild(li);
+    }
+  }
+
+  async function toggleStrengthList() {
+    strengthListOpen = !strengthListOpen;
+    els.strengthList.hidden = !strengthListOpen;
+    if (!strengthListOpen) return;
+    try {
+      if (!strengthCache) {
+        strengthCache = await api("/api/strength-workouts");
+      }
+      renderStrengthList(strengthCache);
+      els.strengthList.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (err) {
+      strengthListOpen = false;
+      els.strengthList.hidden = true;
       showError(err.message);
     }
   }
@@ -1162,6 +1382,9 @@
         showError(err.message);
       }
     });
+    els.btnPickStrength?.addEventListener("click", () => {
+      toggleStrengthList().catch((err) => showError(err.message));
+    });
     document.querySelectorAll("[data-quick-log]").forEach((btn) => {
       btn.addEventListener("click", async () => {
         const kind = btn.dataset.quickLog;
@@ -1214,6 +1437,10 @@
   function wireAdmin() {
     els.adminCategory.addEventListener("change", () => loadAdminList());
     document.getElementById("admin-new").addEventListener("click", () => openForm(null));
+    document.getElementById("admin-strength-new")?.addEventListener("click", () => openForm(null));
+    document.querySelectorAll(".admin-mode").forEach((btn) => {
+      btn.addEventListener("click", () => setAdminMode(btn.dataset.adminMode));
+    });
     document.getElementById("f-save").addEventListener("click", saveForm);
     document.getElementById("f-cancel").addEventListener("click", closeForm);
   }

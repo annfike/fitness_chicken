@@ -62,6 +62,20 @@ class CatalogExercise(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
+class StrengthWorkout(Base):
+    """Standalone strength workout picks (separate from catalog exercises)."""
+
+    __tablename__ = "strength_workouts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(255))
+    duration: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    url: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    trainer: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+
 class UserDayPlan(Base):
     """Frozen personal day: posture picks, muscle group, user choices."""
 
