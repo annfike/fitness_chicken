@@ -54,8 +54,8 @@
     adminList: document.getElementById("admin-list"),
     adminForm: document.getElementById("admin-form"),
     adminHint: document.getElementById("admin-hint"),
-    adminExToolbar: document.getElementById("admin-ex-toolbar"),
-    adminStrengthToolbar: document.getElementById("admin-strength-toolbar"),
+    adminNew: document.getElementById("admin-new"),
+    adminStrengthNew: document.getElementById("admin-strength-new"),
     formTitle: document.getElementById("form-title"),
     fCategory: document.getElementById("f-category"),
     fCategoryWrap: document.getElementById("f-category-wrap"),
@@ -1028,8 +1028,9 @@
       btn.classList.toggle("active", active);
       btn.classList.toggle("ghost", !active);
     });
-    if (els.adminExToolbar) els.adminExToolbar.hidden = mode !== "exercises";
-    if (els.adminStrengthToolbar) els.adminStrengthToolbar.hidden = mode !== "strength";
+    if (els.adminCategory) els.adminCategory.hidden = mode !== "exercises";
+    if (els.adminNew) els.adminNew.hidden = mode !== "exercises";
+    if (els.adminStrengthNew) els.adminStrengthNew.hidden = mode !== "strength";
     if (els.adminHint) {
       els.adminHint.textContent = mode === "strength"
         ? "Список силовых для кнопки «Выбрать силовую» на странице Тренировка."
@@ -1284,7 +1285,6 @@
               comment: parts.join(" · "),
             }),
           });
-          if (row.url) openVideo(row.url);
           if (tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred("success");
           if (typeof tg?.showAlert === "function") tg.showAlert("Силовая отмечена");
           else alert("Силовая отмечена");
